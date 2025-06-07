@@ -34,10 +34,20 @@ class FastingProvider extends ChangeNotifier {
     _history = await _storage.getFastingSessions();
     final selectedTypeName = await _storage.getSelectedFastingType();
     if (selectedTypeName != null) {
-      _selectedType = FastingType.presetTypes.firstWhere(
-        (type) => type.name == selectedTypeName,
-        orElse: () => FastingType.presetTypes[0],
-      );
+      try {
+        _selectedType = FastingType.presetTypes.firstWhere(
+          (type) => type.name == selectedTypeName,
+        );
+      } catch (e) {
+        // If the selected type is not found (maybe old data), default to first one
+        _selectedType = FastingType.presetTypes[0];
+        // Save the new default selection
+        await _storage.saveSelectedFastingType(_selectedType.name);
+      }
+    } else {
+      // No stored selection, use default and save it
+      _selectedType = FastingType.presetTypes[0];
+      await _storage.saveSelectedFastingType(_selectedType.name);
     }
     _notificationsEnabled = await _storage.getNotificationsEnabled();
     notifyListeners();
