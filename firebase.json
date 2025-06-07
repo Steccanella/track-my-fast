@@ -1,0 +1,39 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fasting-app-c37bc",
+          "appId": "1:1003152444897:android:c13b6d0f487fd1d54516a0",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "fasting-app-c37bc",
+          "appId": "1:1003152444897:ios:3faaf4b683ebf3484516a0",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fasting-app-c37bc",
+          "configurations": {
+            "android": "1:1003152444897:android:c13b6d0f487fd1d54516a0",
+            "ios": "1:1003152444897:ios:3faaf4b683ebf3484516a0"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "eur3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "database": {
+    "rules": "database.rules.json"
+  }
+}
