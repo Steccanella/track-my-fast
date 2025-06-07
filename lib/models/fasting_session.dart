@@ -1,21 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
 class FastingSession {
-  final String? id;
+  final String id;
   final DateTime startTime;
   final DateTime? endTime;
   final String fastingTypeName;
   final Duration targetDuration;
   final bool completed;
 
+  static const Uuid _uuid = Uuid();
+
   FastingSession({
-    this.id,
+    String? id,
     required this.startTime,
     this.endTime,
     required this.fastingTypeName,
     required this.targetDuration,
     this.completed = false,
-  });
+  }) : id = id ?? _uuid.v4();
 
   Duration get actualDuration {
     if (endTime == null) {
@@ -33,6 +36,7 @@ class FastingSession {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'startTime': startTime.toIso8601String(),
       'endTime': endTime?.toIso8601String(),
       'fastingTypeName': fastingTypeName,
@@ -43,6 +47,7 @@ class FastingSession {
 
   factory FastingSession.fromJson(Map<String, dynamic> json) {
     return FastingSession(
+      id: json['id'],
       startTime: DateTime.parse(json['startTime']),
       endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
       fastingTypeName: json['fastingTypeName'],

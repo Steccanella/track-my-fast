@@ -39,6 +39,27 @@ class StorageService {
     );
   }
 
+  Future<void> updateFastingSession(FastingSession updatedSession) async {
+    final sessions = await getFastingSessions();
+    final index = sessions.indexWhere((s) => s.id == updatedSession.id);
+    if (index != -1) {
+      sessions[index] = updatedSession;
+      await _prefs.setString(
+        _sessionsKey,
+        json.encode(sessions.map((s) => s.toJson()).toList()),
+      );
+    }
+  }
+
+  Future<void> deleteFastingSession(String sessionId) async {
+    final sessions = await getFastingSessions();
+    sessions.removeWhere((s) => s.id == sessionId);
+    await _prefs.setString(
+      _sessionsKey,
+      json.encode(sessions.map((s) => s.toJson()).toList()),
+    );
+  }
+
   // Selected Fasting Type
   Future<String?> getSelectedFastingType() async {
     return _prefs.getString(_selectedFastingTypeKey);

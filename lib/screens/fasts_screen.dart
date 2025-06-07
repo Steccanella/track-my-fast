@@ -49,11 +49,6 @@ class FastsScreen extends StatelessWidget {
 
               // Fasting Protocols
               _buildFastingProtocols(context),
-
-              const SizedBox(height: 32),
-
-              // Community Stats
-              _buildCommunityStats(),
             ],
           ),
         ),
@@ -83,9 +78,7 @@ class FastsScreen extends StatelessWidget {
                 Expanded(
                   child: _buildActionCard(
                     title: isActive ? 'End Fast' : 'Start Fast',
-                    subtitle: isActive
-                        ? 'Complete your current session'
-                        : 'Begin your fasting journey',
+                    subtitle: isActive ? 'End your fast' : 'Start your fast',
                     icon: isActive ? Icons.stop_circle : Icons.play_circle,
                     color: isActive ? Colors.red : Colors.green,
                     onTap: () {
@@ -369,84 +362,6 @@ class FastsScreen extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildCommunityStats() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.groups,
-                color: Color(0xFF667eea),
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Community',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem('17,492', 'Fasting Now', Colors.green),
-              ),
-              Expanded(
-                child: _buildStatItem('143,852', 'Total Fasters', Colors.blue),
-              ),
-              Expanded(
-                child: _buildStatItem('2.4M', 'Hours Fasted', Colors.purple),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String value, String label, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
     );
   }
 }

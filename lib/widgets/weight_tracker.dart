@@ -56,7 +56,7 @@ class WeightTracker extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       latestWeight != null
-                          ? '${latestWeight.weight.toStringAsFixed(1)} kg'
+                          ? latestWeight.weightWithUnit
                           : 'Tap to log weight',
                       style: TextStyle(
                         fontSize: 14,
@@ -83,65 +83,92 @@ class WeightTracker extends StatelessWidget {
   void _showWeightDialog(BuildContext context, FastingProvider provider) {
     final weightController = TextEditingController();
     final notesController = TextEditingController();
+    WeightUnit selectedUnit = WeightUnit.kg;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Log Weight'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: weightController,
-              decoration: const InputDecoration(
-                labelText: 'Weight (kg)',
-                border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Log Weight'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: weightController,
+                      decoration: InputDecoration(
+                        labelText: 'Weight (${selectedUnit.name})',
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  DropdownButton<WeightUnit>(
+                    value: selectedUnit,
+                    items: WeightUnit.values.map((unit) {
+                      return DropdownMenuItem(
+                        value: unit,
+                        child: Text(unit.name.toUpperCase()),
+                      );
+                    }).toList(),
+                    onChanged: (unit) {
+                      if (unit != null) {
+                        setState(() {
+                          selectedUnit = unit;
+                        });
+                      }
+                    },
+                  ),
+                ],
               ),
-              keyboardType: TextInputType.number,
+              const SizedBox(height: 16),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Notes (optional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: notesController,
-              decoration: const InputDecoration(
-                labelText: 'Notes (optional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
+            ElevatedButton(
+              onPressed: () {
+                final weightText = weightController.text.trim();
+                if (weightText.isNotEmpty) {
+                  final weight = double.tryParse(weightText);
+                  if (weight != null && weight > 0) {
+                    final entry = WeightEntry(
+                      date: DateTime.now(),
+                      weight: weight,
+                      unit: selectedUnit,
+                      notes: notesController.text.trim().isEmpty
+                          ? null
+                          : notesController.text.trim(),
+                    );
+                    provider.addWeightEntry(entry);
+                    Navigator.of(context).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a valid weight'),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final weightText = weightController.text.trim();
-              if (weightText.isNotEmpty) {
-                final weight = double.tryParse(weightText);
-                if (weight != null && weight > 0) {
-                  final entry = WeightEntry(
-                    date: DateTime.now(),
-                    weight: weight,
-                    notes: notesController.text.trim().isEmpty
-                        ? null
-                        : notesController.text.trim(),
-                  );
-                  provider.addWeightEntry(entry);
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a valid weight'),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

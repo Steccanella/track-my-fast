@@ -61,11 +61,8 @@ class FastingProvider extends ChangeNotifier {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_currentSession != null) {
-        // Check if fasting is complete
-        if (remainingTime == Duration.zero) {
-          stopFasting(completed: true);
-          return;
-        }
+        // Just notify listeners, don't auto-stop the timer
+        // User manually decides when to stop
         notifyListeners();
       } else {
         timer.cancel();
@@ -145,7 +142,17 @@ class FastingProvider extends ChangeNotifier {
     if (_currentSession == null) return Duration.zero;
     final remaining =
         _currentSession!.targetDuration - _currentSession!.actualDuration;
-    return remaining.isNegative ? Duration.zero : remaining;
+    return remaining;
+  }
+
+  Duration get overtimeAmount {
+    if (_currentSession == null) return Duration.zero;
+    final remaining = remainingTime;
+    return remaining.isNegative ? remaining.abs() : Duration.zero;
+  }
+
+  bool get isOvertime {
+    return remainingTime.isNegative;
   }
 
   Duration get elapsedTime {
@@ -174,5 +181,17 @@ class FastingProvider extends ChangeNotifier {
   WeightEntry? get latestWeightEntry {
     if (_weightEntries.isEmpty) return null;
     return _weightEntries.first;
+  }
+
+  Future<void> updateFastingSession(FastingSession session) async {
+    await _storage.updateFastingSession(session);
+    _history = await _storage.getFastingSessions();
+    notifyListeners();
+  }
+
+  Future<void> deleteFastingSession(String sessionId) async {
+    await _storage.deleteFastingSession(sessionId);
+    _history = await _storage.getFastingSessions();
+    notifyListeners();
   }
 }

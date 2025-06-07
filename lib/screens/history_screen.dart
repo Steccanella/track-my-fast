@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/fasting_provider.dart';
 import '../widgets/github_style_chart.dart';
+import '../widgets/weight_chart.dart';
+import '../models/fasting_session.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -175,8 +177,6 @@ class _HistoryScreenState extends State<HistoryScreen>
           const SizedBox(height: 24),
           _buildWeightProgress(),
           const SizedBox(height: 24),
-          _buildInsights(),
-          const SizedBox(height: 24),
           _buildTrends(),
         ],
       ),
@@ -303,6 +303,40 @@ class _HistoryScreenState extends State<HistoryScreen>
                             color: completed ? Colors.green : Colors.orange,
                           ),
                         ),
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _showEditSessionDialog(
+                                context, session, fastingProvider);
+                          } else if (value == 'delete') {
+                            _showDeleteConfirmation(
+                                context, session, fastingProvider);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit, size: 18),
+                                SizedBox(width: 8),
+                                Text('Edit'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, size: 18, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Delete',
+                                    style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -662,7 +696,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   Expanded(
                     child: _buildWeightStatCard(
                       'Current',
-                      '${latestWeight.weight.toStringAsFixed(1)} kg',
+                      latestWeight.weightWithUnit,
                       Icons.monitor_weight,
                       Colors.blue,
                     ),
@@ -671,7 +705,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   Expanded(
                     child: _buildWeightStatCard(
                       'Change',
-                      '${weightChange >= 0 ? '+' : ''}${weightChange.toStringAsFixed(1)} kg',
+                      '${weightChange >= 0 ? '+' : ''}${weightChange.toStringAsFixed(1)} ${latestWeight.unit.name}',
                       weightChange >= 0
                           ? Icons.trending_up
                           : Icons.trending_down,
@@ -680,6 +714,19 @@ class _HistoryScreenState extends State<HistoryScreen>
                   ),
                 ],
               ),
+              if (weightEntries.length > 2) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  'Weight Trend',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                WeightChart(entries: weightEntries),
+              ],
             ],
           ),
         );
@@ -912,6 +959,114 @@ class _HistoryScreenState extends State<HistoryScreen>
           ),
         ),
       ],
+    );
+  }
+
+  void _showEditSessionDialog(
+      BuildContext context, FastingSession session, FastingProvider provider) {
+    final startTimeController = TextEditingController(
+      text: DateFormat('yyyy-MM-dd HH:mm').format(session.startTime),
+    );
+    final endTimeController = TextEditingController(
+      text: session.endTime != null
+          ? DateFormat('yyyy-MM-dd HH:mm').format(session.endTime!)
+          : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Fast'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: startTimeController,
+              decoration: const InputDecoration(
+                labelText: 'Start Time (YYYY-MM-DD HH:MM)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: endTimeController,
+              decoration: const InputDecoration(
+                labelText: 'End Time (YYYY-MM-DD HH:MM) - Optional',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              try {
+                final startTime = DateFormat('yyyy-MM-dd HH:mm')
+                    .parse(startTimeController.text);
+                DateTime? endTime;
+                if (endTimeController.text.isNotEmpty) {
+                  endTime = DateFormat('yyyy-MM-dd HH:mm')
+                      .parse(endTimeController.text);
+                }
+
+                final updatedSession = session.copyWith(
+                  startTime: startTime,
+                  endTime: endTime,
+                );
+
+                provider.updateFastingSession(updatedSession);
+                Navigator.of(context).pop();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Fast updated successfully')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Invalid date format')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(
+      BuildContext context, FastingSession session, FastingProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Fast'),
+        content: const Text(
+            'Are you sure you want to delete this fasting session? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              provider.deleteFastingSession(session.id);
+              Navigator.of(context).pop();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Fast deleted successfully')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -202,7 +202,9 @@ class HomeScreenContent extends StatelessWidget {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Remaining (${100 - (progress * 100).round()}%)',
+                                fastingProvider.isOvertime
+                                    ? 'Overtime'
+                                    : 'Remaining (${(100 - (progress * 100)).clamp(0, 100).round()}%)',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -211,12 +213,19 @@ class HomeScreenContent extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _formatDuration(fastingProvider.remainingTime),
-                                style: const TextStyle(
+                                fastingProvider.isOvertime
+                                    ? '+${_formatDuration(fastingProvider.overtimeAmount)}'
+                                    : _formatDuration(
+                                        fastingProvider.remainingTime),
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                  fontFeatures: [FontFeature.tabularFigures()],
+                                  color: fastingProvider.isOvertime
+                                      ? const Color(0xFFFF6B6B)
+                                      : Colors.black87,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ],
                                 ),
                               ),
                             ] else ...[
