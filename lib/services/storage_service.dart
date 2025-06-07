@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/fasting_session.dart';
+import '../models/weight_entry.dart';
 
 class StorageService {
   static const String _sessionsKey = 'fasting_sessions';
   static const String _selectedFastingTypeKey = 'selected_fasting_type';
   static const String _themeKey = 'theme_mode';
   static const String _notificationsKey = 'notifications_enabled';
+  static const String _weightEntriesKey = 'weight_entries';
 
   final SharedPreferences _prefs;
 
@@ -62,5 +64,35 @@ class StorageService {
 
   Future<void> saveNotificationsEnabled(bool enabled) async {
     await _prefs.setBool(_notificationsKey, enabled);
+  }
+
+  // Weight Entries
+  Future<List<WeightEntry>> getWeightEntries() async {
+    final String? entriesJson = _prefs.getString(_weightEntriesKey);
+    if (entriesJson == null) return [];
+
+    final List<dynamic> entriesList = json.decode(entriesJson);
+    return entriesList.map((entry) => WeightEntry.fromJson(entry)).toList();
+  }
+
+  Future<void> saveWeightEntry(WeightEntry entry) async {
+    final entries = await getWeightEntries();
+    entries.add(entry);
+    // Sort by date, most recent first
+    entries.sort((a, b) => b.date.compareTo(a.date));
+    await _prefs.setString(
+      _weightEntriesKey,
+      json.encode(entries.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<void> deleteWeightEntry(WeightEntry entry) async {
+    final entries = await getWeightEntries();
+    entries.removeWhere(
+        (e) => e.date.isAtSameMomentAs(entry.date) && e.weight == entry.weight);
+    await _prefs.setString(
+      _weightEntriesKey,
+      json.encode(entries.map((e) => e.toJson()).toList()),
+    );
   }
 }

@@ -15,6 +15,44 @@ class AuthService extends ChangeNotifier {
   // Auth state changes stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  bool get isAnonymous => currentUser?.isAnonymous ?? false;
+
+  // Sign in anonymously
+  Future<UserCredential?> signInAnonymously() async {
+    try {
+      UserCredential result = await _auth.signInAnonymously();
+      notifyListeners();
+      return result;
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'An unexpected error occurred. Please try again.';
+    }
+  }
+
+  // Convert anonymous account to permanent account
+  Future<UserCredential?> linkWithEmailAndPassword(
+      String email, String password) async {
+    try {
+      if (!isAnonymous) {
+        throw 'User is already registered with an account.';
+      }
+
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+
+      UserCredential result = await currentUser!.linkWithCredential(credential);
+      notifyListeners();
+      return result;
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'An unexpected error occurred. Please try again.';
+    }
+  }
+
   // Sign up with email and password
   Future<UserCredential?> signUpWithEmailPassword(
       String email, String password) async {

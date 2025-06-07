@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../models/fasting_type.dart';
 import '../models/fasting_session.dart';
+import '../models/weight_entry.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 
@@ -11,6 +12,7 @@ class FastingProvider extends ChangeNotifier {
 
   FastingSession? _currentSession;
   List<FastingSession> _history = [];
+  List<WeightEntry> _weightEntries = [];
   FastingType _selectedType = FastingType.presetTypes[0];
   bool _notificationsEnabled = true;
   Timer? _timer;
@@ -27,11 +29,13 @@ class FastingProvider extends ChangeNotifier {
 
   FastingSession? get currentSession => _currentSession;
   List<FastingSession> get history => _history;
+  List<WeightEntry> get weightEntries => _weightEntries;
   FastingType get selectedType => _selectedType;
   bool get notificationsEnabled => _notificationsEnabled;
 
   Future<void> _loadData() async {
     _history = await _storage.getFastingSessions();
+    _weightEntries = await _storage.getWeightEntries();
     final selectedTypeName = await _storage.getSelectedFastingType();
     if (selectedTypeName != null) {
       try {
@@ -152,5 +156,23 @@ class FastingProvider extends ChangeNotifier {
   double get progressPercentage {
     if (_currentSession == null) return 0.0;
     return _currentSession!.progressPercentage;
+  }
+
+  // Weight tracking methods
+  Future<void> addWeightEntry(WeightEntry entry) async {
+    await _storage.saveWeightEntry(entry);
+    _weightEntries = await _storage.getWeightEntries();
+    notifyListeners();
+  }
+
+  Future<void> deleteWeightEntry(WeightEntry entry) async {
+    await _storage.deleteWeightEntry(entry);
+    _weightEntries = await _storage.getWeightEntries();
+    notifyListeners();
+  }
+
+  WeightEntry? get latestWeightEntry {
+    if (_weightEntries.isEmpty) return null;
+    return _weightEntries.first;
   }
 }

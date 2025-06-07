@@ -6,9 +6,22 @@ import '../models/fasting_type.dart';
 import 'package:intl/intl.dart';
 import 'history_screen.dart';
 import 'fasting_options_screen.dart';
+import 'fasts_screen.dart';
+import 'learn_screen.dart';
+import 'main_navigation.dart';
+import '../widgets/weight_tracker.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MainNavigation();
+  }
+}
+
+class HomeScreenContent extends StatelessWidget {
+  const HomeScreenContent({super.key});
 
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
@@ -25,6 +38,15 @@ class HomeScreen extends StatelessWidget {
         final selectedType = fastingProvider.selectedType;
         final isActive = currentSession != null;
         final progress = fastingProvider.progressPercentage;
+
+        // Handle null selectedType case
+        if (selectedType == null) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
         return Scaffold(
           backgroundColor: Colors.grey[50],
@@ -329,6 +351,9 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
 
+                // Weight Tracker (only show when not active)
+                if (!isActive) const WeightTracker(),
+
                 // Fasting Type Selector (only show when not active)
                 if (!isActive)
                   Padding(
@@ -431,57 +456,11 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                // Bottom Navigation Bar
-                Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildNavItem(Icons.timer, 'Timer', true),
-                      _buildNavItem(Icons.local_dining, 'Fasts', false),
-                      _buildNavItem(Icons.bar_chart, 'History', false),
-                      _buildNavItem(Icons.school, 'Learn', false),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
-          color: isActive ? const Color(0xFFFF6B6B) : Colors.grey[400],
-          size: 24,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isActive ? const Color(0xFFFF6B6B) : Colors.grey[400],
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }
