@@ -3,6 +3,7 @@ import 'dart:async';
 import '../models/fasting_type.dart';
 import '../models/fasting_session.dart';
 import '../models/weight_entry.dart';
+import '../models/daily_entry.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 
@@ -13,6 +14,7 @@ class FastingProvider extends ChangeNotifier {
   FastingSession? _currentSession;
   List<FastingSession> _history = [];
   List<WeightEntry> _weightEntries = [];
+  List<DailyEntry> _dailyEntries = [];
   FastingType _selectedType = FastingType.presetTypes[0];
   bool _notificationsEnabled = true;
   Timer? _timer;
@@ -30,12 +32,14 @@ class FastingProvider extends ChangeNotifier {
   FastingSession? get currentSession => _currentSession;
   List<FastingSession> get history => _history;
   List<WeightEntry> get weightEntries => _weightEntries;
+  List<DailyEntry> get dailyEntries => _dailyEntries;
   FastingType get selectedType => _selectedType;
   bool get notificationsEnabled => _notificationsEnabled;
 
   Future<void> _loadData() async {
     _history = await _storage.getFastingSessions();
     _weightEntries = await _storage.getWeightEntries();
+    _dailyEntries = await _storage.getDailyEntries();
     final selectedTypeName = await _storage.getSelectedFastingType();
     if (selectedTypeName != null) {
       try {
@@ -193,5 +197,39 @@ class FastingProvider extends ChangeNotifier {
     await _storage.deleteFastingSession(sessionId);
     _history = await _storage.getFastingSessions();
     notifyListeners();
+  }
+
+  // Daily entry methods
+  Future<void> saveDailyEntry(DailyEntry entry) async {
+    await _storage.saveDailyEntry(entry);
+    _dailyEntries = await _storage.getDailyEntries();
+    notifyListeners();
+  }
+
+  Future<void> updateDailyEntry(DailyEntry entry) async {
+    await _storage.updateDailyEntry(entry);
+    _dailyEntries = await _storage.getDailyEntries();
+    notifyListeners();
+  }
+
+  Future<void> deleteDailyEntry(String entryId) async {
+    await _storage.deleteDailyEntry(entryId);
+    _dailyEntries = await _storage.getDailyEntries();
+    notifyListeners();
+  }
+
+  DailyEntry? getDailyEntryForDate(DateTime date) {
+    try {
+      return _dailyEntries.firstWhere((e) =>
+          e.date.year == date.year &&
+          e.date.month == date.month &&
+          e.date.day == date.day);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  DailyEntry? get todaysDailyEntry {
+    return getDailyEntryForDate(DateTime.now());
   }
 }

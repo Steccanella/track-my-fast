@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/fasting_session.dart';
 import '../models/weight_entry.dart';
+import '../models/daily_entry.dart';
 
 class StorageService {
   static const String _sessionsKey = 'fasting_sessions';
@@ -9,6 +10,7 @@ class StorageService {
   static const String _themeKey = 'theme_mode';
   static const String _notificationsKey = 'notifications_enabled';
   static const String _weightEntriesKey = 'weight_entries';
+  static const String _dailyEntriesKey = 'daily_entries';
 
   final SharedPreferences _prefs;
 
@@ -115,5 +117,66 @@ class StorageService {
       _weightEntriesKey,
       json.encode(entries.map((e) => e.toJson()).toList()),
     );
+  }
+
+  // Daily Entries
+  Future<List<DailyEntry>> getDailyEntries() async {
+    final String? entriesJson = _prefs.getString(_dailyEntriesKey);
+    if (entriesJson == null) return [];
+
+    final List<dynamic> entriesList = json.decode(entriesJson);
+    return entriesList.map((entry) => DailyEntry.fromJson(entry)).toList();
+  }
+
+  Future<void> saveDailyEntry(DailyEntry entry) async {
+    final entries = await getDailyEntries();
+
+    // Remove existing entry for the same date if any
+    entries.removeWhere((e) =>
+        e.date.year == entry.date.year &&
+        e.date.month == entry.date.month &&
+        e.date.day == entry.date.day);
+
+    entries.add(entry);
+    // Sort by date, most recent first
+    entries.sort((a, b) => b.date.compareTo(a.date));
+
+    await _prefs.setString(
+      _dailyEntriesKey,
+      json.encode(entries.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<void> updateDailyEntry(DailyEntry updatedEntry) async {
+    final entries = await getDailyEntries();
+    final index = entries.indexWhere((e) => e.id == updatedEntry.id);
+    if (index != -1) {
+      entries[index] = updatedEntry;
+      await _prefs.setString(
+        _dailyEntriesKey,
+        json.encode(entries.map((e) => e.toJson()).toList()),
+      );
+    }
+  }
+
+  Future<void> deleteDailyEntry(String entryId) async {
+    final entries = await getDailyEntries();
+    entries.removeWhere((e) => e.id == entryId);
+    await _prefs.setString(
+      _dailyEntriesKey,
+      json.encode(entries.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<DailyEntry?> getDailyEntryForDate(DateTime date) async {
+    final entries = await getDailyEntries();
+    try {
+      return entries.firstWhere((e) =>
+          e.date.year == date.year &&
+          e.date.month == date.month &&
+          e.date.day == date.day);
+    } catch (e) {
+      return null;
+    }
   }
 }

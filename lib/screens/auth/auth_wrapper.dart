@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import 'login_screen.dart';
-import '../home_screen.dart';
+import '../main_navigation.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -14,6 +14,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _hasTriedAnonymousSignIn = false;
+  bool _isSigningOut = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,24 +32,24 @@ class _AuthWrapperState extends State<AuthWrapper> {
               );
             }
 
-            // If user is logged in (either anonymous or with account), show home screen
+            // If user is logged in (either anonymous or with account), show main navigation
             if (snapshot.hasData && snapshot.data != null) {
-              return const HomeScreen();
+              return const MainNavigation();
             }
 
-            // If no user and we haven't tried anonymous sign-in yet, do it now
-            if (!_hasTriedAnonymousSignIn) {
-              _hasTriedAnonymousSignIn = true;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
+            // If no user, try to sign in anonymously
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!_hasTriedAnonymousSignIn) {
+                _hasTriedAnonymousSignIn = true;
                 _signInAnonymously(authService);
-              });
+              }
+            });
 
-              return const Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
 
             // If anonymous sign-in failed, show login screen as fallback
             return const LoginScreen();

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/fasting_provider.dart';
 import '../models/fasting_type.dart';
+import '../models/daily_entry.dart';
 import 'fasting_options_screen.dart';
 
 class FastsScreen extends StatelessWidget {
@@ -12,104 +14,224 @@ class FastsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              const Text(
-                'Your Fasts',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+        child: Consumer<FastingProvider>(
+          builder: (context, fastingProvider, child) {
+            final today = DateTime.now();
+            final todayEntry = fastingProvider.todaysDailyEntry;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with Date
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Daily Tracker',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('EEEE, MMMM dd').format(today),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.calendar_today,
+                        color: Colors.grey[400],
+                        size: 24,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Daily Tracking Cards
+                  _buildTrackingCard(
+                    'Notes',
+                    Icons.note_alt,
+                    Colors.blue,
+                    todayEntry?.notes ?? 'Add a note about your day',
+                    () =>
+                        _showNotesDialog(context, fastingProvider, todayEntry),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTrackingCard(
+                    'Mood',
+                    Icons.mood,
+                    Colors.orange,
+                    '${todayEntry?.moodEmoji ?? '❓'} ${todayEntry?.moodName ?? 'How are you feeling?'}',
+                    () => _showMoodDialog(context, fastingProvider, todayEntry),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTrackingCard(
+                    'Water Intake',
+                    Icons.local_drink,
+                    Colors.cyan,
+                    todayEntry?.waterIntake != null
+                        ? '${todayEntry!.waterIntake!.toInt()} ml'
+                        : 'Track your hydration',
+                    () =>
+                        _showWaterDialog(context, fastingProvider, todayEntry),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _buildTrackingCard(
+                    'Weight',
+                    Icons.monitor_weight,
+                    Colors.green,
+                    todayEntry?.weight != null
+                        ? '${todayEntry!.weight!.toStringAsFixed(1)} ${todayEntry.weightUnit ?? 'kg'}'
+                        : 'Log your weight',
+                    () =>
+                        _showWeightDialog(context, fastingProvider, todayEntry),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Quick Actions for Fasting
+                  const Text(
+                    'Fasting Control',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildQuickActions(context, fastingProvider),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Manage your fasting journey',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Quick Actions
-              _buildQuickActions(context),
-
-              const SizedBox(height: 32),
-
-              // Current Challenge
-              _buildCurrentChallenge(),
-
-              const SizedBox(height: 32),
-
-              // Fasting Protocols
-              _buildFastingProtocols(context),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTrackingCard(String title, IconData icon, Color color,
+      String value, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(
+      BuildContext context, FastingProvider fastingProvider) {
+    final isActive = fastingProvider.currentSession != null;
+
+    return Row(
       children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+        Expanded(
+          child: _buildActionCard(
+            title: isActive ? 'End Fast' : 'Start Fast',
+            subtitle: isActive ? 'End your fast' : 'Start your fast',
+            icon: isActive ? Icons.stop_circle : Icons.play_circle,
+            color: isActive ? Colors.red : Colors.green,
+            onTap: () {
+              if (isActive) {
+                fastingProvider.stopFasting(completed: false);
+              } else {
+                fastingProvider.startFasting();
+              }
+            },
           ),
         ),
-        const SizedBox(height: 16),
-        Consumer<FastingProvider>(
-          builder: (context, fastingProvider, child) {
-            final isActive = fastingProvider.currentSession != null;
-
-            return Row(
-              children: [
-                Expanded(
-                  child: _buildActionCard(
-                    title: isActive ? 'End Fast' : 'Start Fast',
-                    subtitle: isActive ? 'End your fast' : 'Start your fast',
-                    icon: isActive ? Icons.stop_circle : Icons.play_circle,
-                    color: isActive ? Colors.red : Colors.green,
-                    onTap: () {
-                      if (isActive) {
-                        fastingProvider.stopFasting(completed: false);
-                      } else {
-                        fastingProvider.startFasting();
-                      }
-                    },
-                  ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildActionCard(
+            title: 'Change Plan',
+            subtitle: 'Switch fasting protocol',
+            icon: Icons.tune,
+            color: Colors.blue,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FastingOptionsScreen(),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildActionCard(
-                    title: 'Change Plan',
-                    subtitle: 'Switch fasting protocol',
-                    icon: Icons.tune,
-                    color: Colors.blue,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FastingOptionsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
+              );
+            },
+          ),
         ),
       ],
     );
@@ -177,191 +299,238 @@ class FastsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCurrentChallenge() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.emoji_events,
-                color: Colors.white,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'December Challenge',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            '21-Day Consistency Challenge',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Complete 21 days of fasting to unlock exclusive rewards',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withOpacity(0.8),
-            ),
-          ),
-          const SizedBox(height: 16),
+  void _showNotesDialog(BuildContext context, FastingProvider provider,
+      DailyEntry? currentEntry) {
+    final TextEditingController controller =
+        TextEditingController(text: currentEntry?.notes ?? '');
 
-          // Progress Bar
-          Container(
-            height: 8,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: 0.4, // 40% progress
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Daily Notes'),
+          content: TextField(
+            controller: controller,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              hintText:
+                  'How was your day? Any thoughts about your fasting experience?',
+              border: OutlineInputBorder(),
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            '8 of 21 days completed',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFastingProtocols(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Popular Protocols',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const FastingOptionsScreen(),
-                  ),
-                );
+                _saveDailyEntry(provider, currentEntry,
+                    notes: controller.text.trim());
+                Navigator.of(context).pop();
               },
-              child: const Text('See All'),
+              child: const Text('Save'),
             ),
           ],
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: FastingType.presetTypes.length - 1, // Exclude custom
-            itemBuilder: (context, index) {
-              final fastingType = FastingType.presetTypes[index];
-              return Container(
-                width: 140,
-                margin: const EdgeInsets.only(right: 16),
-                child: _buildProtocolCard(fastingType, context),
-              );
-            },
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildProtocolCard(FastingType fastingType, BuildContext context) {
-    return Consumer<FastingProvider>(
-      builder: (context, fastingProvider, child) {
-        final isSelected =
-            fastingProvider.selectedType.name == fastingType.name;
-
-        return GestureDetector(
-          onTap: () {
-            fastingProvider.setSelectedType(fastingType);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? fastingType.color.withOpacity(0.1)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected ? fastingType.color : Colors.grey[300]!,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  fastingType.icon,
-                  color: fastingType.color,
-                  size: 24,
+  void _showMoodDialog(BuildContext context, FastingProvider provider,
+      DailyEntry? currentEntry) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('How are you feeling?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: Mood.values.map((mood) {
+              return ListTile(
+                leading: Text(
+                  _getMoodEmoji(mood),
+                  style: const TextStyle(fontSize: 24),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  fastingType.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  fastingType.difficulty,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: fastingType.color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+                title: Text(_getMoodName(mood)),
+                onTap: () {
+                  _saveDailyEntry(provider, currentEntry, mood: mood);
+                  Navigator.of(context).pop();
+                },
+              );
+            }).toList(),
           ),
         );
       },
     );
+  }
+
+  void _showWaterDialog(BuildContext context, FastingProvider provider,
+      DailyEntry? currentEntry) {
+    final TextEditingController controller = TextEditingController(
+      text: currentEntry?.waterIntake?.toInt().toString() ?? '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Water Intake'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: 'Enter amount in ml',
+              suffixText: 'ml',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final waterAmount = double.tryParse(controller.text);
+                _saveDailyEntry(provider, currentEntry,
+                    waterIntake: waterAmount);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showWeightDialog(BuildContext context, FastingProvider provider,
+      DailyEntry? currentEntry) {
+    final TextEditingController weightController = TextEditingController(
+      text: currentEntry?.weight?.toString() ?? '',
+    );
+    String selectedUnit = currentEntry?.weightUnit ?? 'kg';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Weight'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: weightController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Enter your weight',
+                      suffixText: selectedUnit,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Text('Unit: '),
+                      DropdownButton<String>(
+                        value: selectedUnit,
+                        items: ['kg', 'lbs'].map((unit) {
+                          return DropdownMenuItem(
+                            value: unit,
+                            child: Text(unit),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedUnit = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final weight = double.tryParse(weightController.text);
+                    _saveDailyEntry(provider, currentEntry,
+                        weight: weight, weightUnit: selectedUnit);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _saveDailyEntry(
+    FastingProvider provider,
+    DailyEntry? currentEntry, {
+    String? notes,
+    Mood? mood,
+    double? waterIntake,
+    double? weight,
+    String? weightUnit,
+  }) {
+    final today = DateTime.now();
+    final entry = currentEntry?.copyWith(
+          notes: notes ?? currentEntry?.notes,
+          mood: mood ?? currentEntry?.mood,
+          waterIntake: waterIntake ?? currentEntry?.waterIntake,
+          weight: weight ?? currentEntry?.weight,
+          weightUnit: weightUnit ?? currentEntry?.weightUnit,
+        ) ??
+        DailyEntry(
+          date: today,
+          notes: notes,
+          mood: mood,
+          waterIntake: waterIntake,
+          weight: weight,
+          weightUnit: weightUnit,
+        );
+
+    provider.saveDailyEntry(entry);
+  }
+
+  String _getMoodEmoji(Mood mood) {
+    switch (mood) {
+      case Mood.excellent:
+        return '😄';
+      case Mood.good:
+        return '😊';
+      case Mood.okay:
+        return '😐';
+      case Mood.bad:
+        return '😞';
+      case Mood.terrible:
+        return '😢';
+    }
+  }
+
+  String _getMoodName(Mood mood) {
+    switch (mood) {
+      case Mood.excellent:
+        return 'Excellent';
+      case Mood.good:
+        return 'Good';
+      case Mood.okay:
+        return 'Okay';
+      case Mood.bad:
+        return 'Bad';
+      case Mood.terrible:
+        return 'Terrible';
+    }
   }
 }

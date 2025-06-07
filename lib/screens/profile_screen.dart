@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/fasting_provider.dart';
+import '../models/weight_entry.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -171,54 +173,77 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildSettingsSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return Consumer<FastingProvider>(
+      builder: (context, fastingProvider, child) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'App Settings',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'App Settings',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildSettingItem(
+                Icons.monitor_weight,
+                'Weight Unit',
+                'Choose kg or lbs',
+                () => _showWeightUnitDialog(context),
+              ),
+              const Divider(height: 32),
+              _buildSettingItem(
+                Icons.notifications,
+                'Notifications',
+                fastingProvider.notificationsEnabled ? 'Enabled' : 'Disabled',
+                () => _toggleNotifications(context, fastingProvider),
+              ),
+              const Divider(height: 32),
+              _buildSettingItem(
+                Icons.backup,
+                'Data Export',
+                'Export your fasting data',
+                () => _exportData(context, fastingProvider),
+              ),
+              const Divider(height: 32),
+              _buildSettingItem(
+                Icons.delete,
+                'Clear Data',
+                'Reset all app data',
+                () => _showClearDataDialog(context, fastingProvider),
+                textColor: Colors.red,
+              ),
+              const Divider(height: 32),
+              Consumer<AuthService>(
+                builder: (context, authService, child) {
+                  return _buildSettingItem(
+                    Icons.logout,
+                    'Sign Out',
+                    'Sign out of your account',
+                    () => _signOut(context, authService),
+                    textColor: Colors.red,
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          _buildSettingItem(
-            Icons.notifications,
-            'Notifications',
-            'Manage fasting reminders',
-            () {},
-          ),
-          const Divider(height: 32),
-          _buildSettingItem(
-            Icons.backup,
-            'Data Export',
-            'Export your fasting data',
-            () {},
-          ),
-          const Divider(height: 32),
-          _buildSettingItem(
-            Icons.delete,
-            'Clear Data',
-            'Reset all app data',
-            () {},
-            textColor: Colors.red,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -398,6 +423,156 @@ class ProfileScreen extends StatelessWidget {
               }
             },
             child: const Text('Create Account'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWeightUnitDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Weight Unit'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Kilograms (kg)'),
+              trailing: const Icon(Icons.radio_button_checked),
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Weight unit set to kg')),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Pounds (lbs)'),
+              trailing: const Icon(Icons.radio_button_unchecked),
+              onTap: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Weight unit set to lbs')),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _toggleNotifications(BuildContext context, FastingProvider provider) {
+    provider.setNotificationsEnabled(!provider.notificationsEnabled);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(provider.notificationsEnabled
+            ? 'Notifications enabled'
+            : 'Notifications disabled'),
+      ),
+    );
+  }
+
+  void _exportData(BuildContext context, FastingProvider provider) {
+    final sessionCount = provider.history.length;
+    final weightCount = provider.weightEntries.length;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Data'),
+        content: Text(
+          'Found $sessionCount fasting sessions and $weightCount weight entries.\n\n'
+          'Data export functionality will be available in a future update.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showClearDataDialog(BuildContext context, FastingProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Data'),
+        content: const Text(
+          'This will permanently delete all your fasting history and weight entries. This action cannot be undone.\n\nAre you sure you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content:
+                      Text('Data clearing functionality will be implemented'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Clear Data'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _signOut(BuildContext context, AuthService authService) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text(
+            'Are you sure you want to sign out? You\'ll be signed in as a guest again.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await authService.signOut();
+                // Sign in anonymously immediately after signing out
+                await authService.signInAnonymously();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Signed out - now using guest account')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sign Out'),
           ),
         ],
       ),
