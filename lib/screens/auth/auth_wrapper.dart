@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-import 'login_screen.dart';
+
 import '../main_navigation.dart';
 
 class AuthWrapper extends StatefulWidget {
@@ -14,7 +14,6 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _hasTriedAnonymousSignIn = false;
-  bool _isSigningOut = false;
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +49,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 child: CircularProgressIndicator(),
               ),
             );
-
-            // If anonymous sign-in failed, show login screen as fallback
-            return const LoginScreen();
           },
         );
       },

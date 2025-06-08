@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:provider/provider.dart';
 import '../providers/fasting_provider.dart';
-import '../models/fasting_type.dart';
+
 import 'package:intl/intl.dart';
 import 'history_screen.dart';
 import 'fasting_options_screen.dart';
-import 'fasts_screen.dart';
-import 'learn_screen.dart';
+
 import 'main_navigation.dart';
 import '../widgets/weight_tracker.dart';
 import '../widgets/fasting_zones_timer.dart';
@@ -398,15 +397,6 @@ class HomeScreenContent extends StatelessWidget {
         final selectedType = fastingProvider.selectedType;
         final isActive = currentSession != null;
         final progress = fastingProvider.progressPercentage;
-
-        // Handle null selectedType case
-        if (selectedType == null) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
 
         return Scaffold(
           backgroundColor: Colors.grey[50],

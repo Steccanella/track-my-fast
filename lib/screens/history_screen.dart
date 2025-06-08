@@ -436,9 +436,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 Expanded(
                   child: _buildHistoryDetail(
                     'Duration',
-                    duration != null
-                        ? '${duration.inHours}h ${duration.inMinutes.remainder(60)}m'
-                        : 'N/A',
+                    '${duration.inHours}h ${duration.inMinutes.remainder(60)}m',
                     Icons.timer,
                   ),
                 ),
@@ -470,7 +468,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                  if (dailyEntry!.mood != null)
+                  if (dailyEntry.mood != null)
                     _buildQuickStat(dailyEntry.moodEmoji, dailyEntry.moodName,
                         Colors.orange),
                   if (dailyEntry.waterIntake != null)
@@ -1170,11 +1168,8 @@ class _HistoryScreenState extends State<HistoryScreen>
                   Colors.green,
                   [
                     _buildDetailRow('Type', session.fastingTypeName),
-                    _buildDetailRow(
-                        'Duration',
-                        session.actualDuration != null
-                            ? '${session.actualDuration!.inHours}h ${session.actualDuration!.inMinutes.remainder(60)}m'
-                            : 'N/A'),
+                    _buildDetailRow('Duration',
+                        '${session.actualDuration.inHours}h ${session.actualDuration.inMinutes.remainder(60)}m'),
                     _buildDetailRow(
                         'Status', session.completed ? 'Completed' : 'Partial'),
                     if (session.endTime != null)

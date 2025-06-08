@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/fasting_provider.dart';
-import '../models/fasting_type.dart';
+
 import '../models/daily_entry.dart';
 import 'fasting_options_screen.dart';
 
@@ -486,11 +486,11 @@ class FastsScreen extends StatelessWidget {
   }) {
     final today = DateTime.now();
     final entry = currentEntry?.copyWith(
-          notes: notes ?? currentEntry?.notes,
-          mood: mood ?? currentEntry?.mood,
-          waterIntake: waterIntake ?? currentEntry?.waterIntake,
-          weight: weight ?? currentEntry?.weight,
-          weightUnit: weightUnit ?? currentEntry?.weightUnit,
+          notes: notes ?? currentEntry.notes,
+          mood: mood ?? currentEntry.mood,
+          waterIntake: waterIntake ?? currentEntry.waterIntake,
+          weight: weight ?? currentEntry.weight,
+          weightUnit: weightUnit ?? currentEntry.weightUnit,
         ) ??
         DailyEntry(
           date: today,
