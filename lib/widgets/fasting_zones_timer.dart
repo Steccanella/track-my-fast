@@ -90,10 +90,13 @@ class FastingZonesTimer extends StatelessWidget {
       final endAngle = -math.pi / 2 + (2 * math.pi * endHour / totalHours);
       final centerAngle = (startAngle + endAngle) / 2;
 
-      // Position the icon at the center of its zone segment
-      final radius = 130.0; // Radius for icon placement
-      final x = 160 + (radius * math.cos(centerAngle)); // Center at 160,160
-      final y = 160 + (radius * math.sin(centerAngle));
+      // Position the icon at the exact center of the bar stroke
+      final containerSize = 320.0; // Total container size
+      final iconRadius =
+          containerSize / 2 - 20; // Same radius as the painter draws the arc
+
+      final x = 160 + (iconRadius * math.cos(centerAngle)); // Center at 160,160
+      final y = 160 + (iconRadius * math.sin(centerAngle));
 
       return Positioned(
         left: x - 22,
